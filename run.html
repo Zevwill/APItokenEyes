@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 额度监控器</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>📊</text></svg>">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+        :root{--pri:#4f46e5;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--off:#64748b;--bg:#0f172a;--card:#1e293b;--txt:#f1f5f9;--sub:#94a3b8;--bdr:#334155;--inp:#273449}
+        body{background:var(--bg);color:var(--txt);padding:16px;max-width:960px;margin:0 auto;min-height:100vh;padding-bottom:60px}
+        header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+        .title{font-size:22px;font-weight:600}
+        .hdr-r{display:flex;gap:8px;align-items:center}
+        .dev{font-size:11px;color:var(--sub);background:var(--card);padding:5px 12px;border-radius:10px;border:1px solid var(--bdr)}
+        .ib{width:36px;height:36px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:.2s}
+        .ib:hover{color:var(--txt);border-color:var(--pri)}
+        .pnl{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--bdr);margin-bottom:14px}
+        .pnl-t{font-size:15px;margin-bottom:10px;font-weight:500}
+        .sp{display:none}.sp.open{display:block}
+        .sg{display:grid;gap:10px}
+        .sr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .sr label{font-size:13px;color:var(--sub);min-width:76px}
+        .sr input[type=text],.sr input[type=url]{flex:1;min-width:180px;padding:8px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:#fff;outline:none;font-size:13px}
+        .sr input:focus{border-color:var(--pri)}
+        .gbox{background:#273449;border-radius:10px;padding:12px 14px;margin-top:10px;font-size:12px;color:var(--sub);line-height:1.9}
+        .gbox b{color:var(--txt)}.gbox code{color:var(--warn)}
+        .btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;transition:.2s;white-space:nowrap}
+        .btn:hover{opacity:.88}.btn:disabled{opacity:.5;cursor:not-allowed}
+        .btn-s{padding:6px 12px;font-size:12px}
+        .btn-p{background:var(--pri);color:#fff}
+        .btn-g{background:#334155;color:#fff}
+        .btn-d{background:var(--err);color:#fff}
+        .irow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+        .sel{padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:#fff;outline:none;font-size:13px;min-width:150px}
+        #ki{flex:1;min-width:200px;padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:#fff;outline:none;font-size:13px}
+        #ki:focus,.sel:focus{border-color:var(--pri)}
+        .custom-row{display:none;margin-bottom:8px}
+        .custom-row.show{display:flex;gap:8px;flex-wrap:wrap}
+        .custom-row input{flex:1;min-width:200px;padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:#fff;outline:none;font-size:13px}
+        .custom-row input:focus{border-color:var(--pri)}
+        .custom-row select{padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--inp);color:#fff;outline:none;font-size:13px;min-width:140px}
+        .hint{font-size:11px;color:var(--sub);margin-top:4px;line-height:1.7}
+        #cc{display:grid;gap:14px}
+        .cd{background:var(--card);border-radius:14px;padding:18px;border:1px solid var(--bdr);position:relative;transition:.3s}
+        .cd-off{filter:grayscale(1);opacity:.65}
+        .cd-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-right:28px}
+        .mn{font-size:17px;font-weight:600}
+        .badge{font-size:10px;padding:2px 6px;border-radius:4px;background:#4f46e520;color:var(--pri);margin-left:6px;vertical-align:middle}
+        .tg{font-size:11px;padding:3px 9px;border-radius:6px;white-space:nowrap}
+        .t-ok{background:#10b98118;color:var(--ok)}
+        .t-w{background:#f59e0b18;color:var(--warn)}
+        .t-e{background:#ef444418;color:var(--err)}
+        .t-off{background:#64748b18;color:var(--off)}
+        .t-ld{background:#4f46e518;color:var(--pri)}
+        .db{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:1px solid var(--bdr);background:var(--inp);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+        .db:hover{color:var(--err);border-color:var(--err)}
+        .bal{font-size:26px;font-weight:700;margin:8px 0}
+        .bal .u{font-size:13px;font-weight:400;color:var(--sub);margin-left:3px}
+        .bar{width:100%;height:8px;background:#334155;border-radius:8px;overflow:hidden;margin:6px 0 10px}
+        .bi{height:100%;border-radius:8px;transition:width .5s;background:var(--ok)}
+        .bi-w{background:var(--warn)}.bi-off{background:var(--off)}
+        .ir{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);flex-wrap:wrap;gap:4px}
+        .km{font-family:monospace;font-size:11px}
+        .ft{text-align:center;font-size:11px;color:var(--sub);margin-top:20px;padding:10px 0}
+        .et{text-align:center;padding:36px 0;color:var(--sub);font-size:13px}
+        @media(max-width:600px){body{padding:12px}.bal{font-size:22px}.mn{font-size:15px}.irow{flex-direction:column}.custom-row{flex-direction:column}}
+    </style>
+</head>
+<body>
+<header>
+    <div class="title">AI 额度监控器</div>
+    <div class="hdr-r">
+        <div class="dev" id="dev">--</div>
+        <button class="ib" onclick="fetchAll()" title="手动刷新">&#x21bb;</button>
+        <button class="ib" onclick="togSP()" title="设置">&#x2699;</button>
+    </div>
+</header>
+
+<div class="pnl sp" id="sp">
+    <div class="pnl-t">设置</div>
+    <div class="sg">
+        <div class="sr">
+            <label>CORS 代理</label>
+            <input type="text" id="cp" placeholder="留空=直连, 例: https://corsproxy.io/?" oninput="saveCP()">
+        </div>
+        <div class="sr" style="gap:6px;flex-wrap:wrap">
+            <button class="btn btn-s btn-g" onclick="expCfg()">导出配置</button>
+            <button class="btn btn-s btn-g" onclick="impCfg()">导入配置</button>
+            <button class="btn btn-s btn-d" onclick="clrAll()">清空所有</button>
+        </div>
+    </div>
+    <div class="gbox">
+        <b>快捷方式指南</b><br>
+        <b>Windows:</b> 双击 HTML 打开 / 浏览器书签 / 右键发送到桌面<br>
+        <b>iOS Safari:</b> 分享 → 添加到主屏幕 (全屏 PWA)<br>
+        <b>Android Chrome:</b> 菜单 → 添加到主屏幕<br><br>
+        <b>CORS 说明:</b> 国内平台一般可直连。国外平台被 CORS 拦截时填代理前缀。<br>
+        免费代理: <code>https://corsproxy.io/?</code><br>
+        本地运行: <code>python -m http.server 8080</code><br><br>
+        <b>小米 MiMo:</b> Token Plan 密钥格式 <code>tp-xxxxx</code>，按量计费 <code>sk-xxxxx</code>，两者独立不可混用。<br>
+        <b>不支持余额查询:</b> 讯飞星火/腾讯混元/百度文心 (HMAC签名认证)
+    </div>
+</div>
+
+<div class="pnl">
+    <div class="pnl-t">添加 API 密钥</div>
+    <div class="irow">
+        <select class="sel" id="ms" onchange="onModelChange()"><option value="auto">自动识别</option></select>
+        <input type="password" id="ki" placeholder="粘贴你的 API 密钥">
+        <button class="btn btn-p" id="ab" onclick="addKey()">保存并校验</button>
+    </div>
+    <div class="custom-row" id="customRow">
+        <input type="url" id="customUrl" placeholder="中转站地址, 例: https://your-proxy.com/v1">
+        <input type="text" id="customName" placeholder="自定义名称 (选填)">
+        <select id="customBilling">
+            <option value="standard">标准余额接口 (/dashboard/billing)</option>
+            <option value="models">仅验证密钥 (/v1/models)</option>
+        </select>
+    </div>
+    <div class="hint">
+        支持: DeepSeek / 小米MiMo / Moonshot / 硅基流动 / OpenRouter / 智谱GLM / 通义千问 / 百川 / 阶跃星辰 / MiniMax / 零一万物 / 字节豆包 / Groq / xAI / Mistral / Gemini / OpenAI / Claude / <b>自定义中转站</b>
+    </div>
+</div>
+
+<div id="cc"></div>
+<div class="ft" id="ft">最后刷新: 未启动</div>
+
+<script>
+// ================================================================
+//                        模型平台配置
+// ================================================================
+const ML = [
+    // ========== 有余额查询接口 ==========
+    {
+        id:"deepseek", name:"DeepSeek", unit:"元", hb:true,
+        url:"https://api.deepseek.com/user/balance",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{
+            if(!r.balance_infos||!r.balance_infos.length) throw new Error("empty");
+            const i=r.balance_infos[0];
+            const t=parseFloat(i.total_balance)||0;
+            const g=parseFloat(i.granted_balance)||0;
+            const p=parseFloat(i.topped_up_balance)||0;
+            return{remain:t, detail:"充值: "+p.toFixed(2)+" | 赠送: "+g.toFixed(2)};
+        }
+    },
+    {
+        id:"moonshot", name:"Moonshot (Kimi)", unit:"元", hb:true,
+        url:"https://api.moonshot.cn/v1/users/me/balance",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{
+            if(r.code!==undefined&&r.code!==0) throw new Error("code!=0");
+            const d=r.data||r;
+            const a=parseFloat(d.available_balance)||0;
+            const v=parseFloat(d.voucher_balance)||0;
+            const c=parseFloat(d.cash_balance)||0;
+            return{remain:a, detail:"现金: "+c.toFixed(2)+" | 代金券: "+v.toFixed(2)};
+        }
+    },
+    {
+        id:"siliconflow", name:"硅基流动 (SiliconFlow)", unit:"元", hb:true,
+        url:"https://api.siliconflow.cn/v1/user/info",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{
+            const d=r.data||r;
+            const b=parseFloat(d.balance)||0;
+            const t=parseFloat(d.totalBalance)||0;
+            const c=parseFloat(d.chargeBalance)||0;
+            return{remain:b, detail:t>0?"总额: "+t.toFixed(2)+" | 充值: "+c.toFixed(2):""};
+        }
+    },
+    {
+        id:"openrouter", name:"OpenRouter", unit:"USD", hb:true,
+        url:"https://openrouter.ai/api/v1/auth/key",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{
+            const d=r.data||r;
+            const l=parseFloat(d.limit)||0, u=parseFloat(d.usage)||0;
+            const rm=l>0?l-u:0;
+            return{remain:rm, detail:l>0?"限额: "+l.toFixed(2)+" | 已用: "+u.toFixed(4):"无限额"};
+        }
+    },
+
+    // ========== 小米 MiMo ==========
+    {
+        id:"mimo-cn", name:"小米 MiMo (中国)", unit:"Token", hb:false,
+        url:"https://token-plan-cn.xiaomimimo.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object==="list") return{remain:-1,detail:"密钥有效 | 余额请查 mimo.xiaomi.com 控制台"};throw new Error("x");}
+    },
+    {
+        id:"mimo-sgp", name:"小米 MiMo (新加坡)", unit:"Token", hb:false,
+        url:"https://token-plan-sgp.xiaomimimo.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object==="list") return{remain:-1,detail:"密钥有效 | 余额请查 mimo.xiaomi.com 控制台"};throw new Error("x");}
+    },
+    {
+        id:"mimo-eu", name:"小米 MiMo (欧洲)", unit:"Token", hb:false,
+        url:"https://token-plan-ams.xiaomimimo.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object==="list") return{remain:-1,detail:"密钥有效 | 余额请查 mimo.xiaomi.com 控制台"};throw new Error("x");}
+    },
+
+    // ========== 仅验证密钥 (无公开余额API) ==========
+    {
+        id:"openai", name:"OpenAI", unit:"USD", hb:false,
+        url:"https://api.openai.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object==="list") return{remain:-1,detail:"密钥有效 | 余额请查 platform.openai.com"};throw new Error("x");}
+    },
+    {
+        id:"claude", name:"Anthropic Claude", unit:"USD", hb:false,
+        url:"https://api.anthropic.com/v1/models",
+        hd:(k)=>({"x-api-key":k,"anthropic-version":"2023-06-01"}),
+        pq:(r)=>{if(r.data||r.type) return{remain:-1,detail:"密钥有效 | 余额请查 console.anthropic.com"};throw new Error("x");}
+    },
+    {
+        id:"zhipu", name:"智谱 AI (GLM)", unit:"元", hb:false,
+        url:"https://open.bigmodel.cn/api/paas/v4/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效 | 余额请查 open.bigmodel.cn"};throw new Error("x");}
+    },
+    {
+        id:"dashscope", name:"阿里通义千问 (DashScope)", unit:"元", hb:false,
+        url:"https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object) return{remain:-1,detail:"密钥有效 | 余额请查阿里云控制台"};throw new Error("x");}
+    },
+    {
+        id:"baichuan", name:"百川智能 (Baichuan)", unit:"元", hb:false,
+        url:"https://api.baichuan-ai.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"stepfun", name:"阶跃星辰 (StepFun)", unit:"元", hb:false,
+        url:"https://api.stepfun.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"minimax", name:"MiniMax (海螺AI)", unit:"元", hb:false,
+        url:"https://api.minimax.chat/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.base_resp) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"yi", name:"零一万物 (Yi)", unit:"元", hb:false,
+        url:"https://api.lingyiwanwu.com/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"doubao", name:"字节豆包 (Doubao)", unit:"元", hb:false,
+        url:"https://ark.cn-beijing.volces.com/api/v3/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效 | 余额请查火山引擎控制台"};throw new Error("x");}
+    },
+    {
+        id:"groq", name:"Groq", unit:"USD", hb:false,
+        url:"https://api.groq.com/openai/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object) return{remain:-1,detail:"密钥有效 | 免费平台"};throw new Error("x");}
+    },
+    {
+        id:"xai", name:"xAI (Grok)", unit:"USD", hb:false,
+        url:"https://api.x.ai/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data||r.object) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"mistral", name:"Mistral AI", unit:"EUR", hb:false,
+        url:"https://api.mistral.ai/v1/models",
+        hd:(k)=>({"Authorization":"Bearer "+k}),
+        pq:(r)=>{if(r.data) return{remain:-1,detail:"密钥有效"};throw new Error("x");}
+    },
+    {
+        id:"gemini", name:"Google Gemini", unit:"USD", hb:false,
+        gu:(k)=>"https://generativelanguage.googleapis.com/v1beta/models?key="+k,
+        hd:()=>({}),
+        pq:(r)=>{if(r.models) return{remain:-1,detail:"密钥有效 | 余额请查 Google Cloud"};throw new Error("x");}
+    }
+];
+
+// ================================================================
+//                          全局状态
+// ================================================================
+let KL = [];
+let corsProxy = "";
+const INTERVAL = 60000;
+let timer = null;
+
+// ================================================================
+//                          初始化
+// ================================================================
+window.onload = function(){
+    detectDev();
+    initSel();
+    load();
+    renderAll();
+    fetchAll();
+    timer = setInterval(fetchAll, INTERVAL);
+};
+
+function detectDev(){
+    const u=navigator.userAgent;
+    let s="Unknown",d="Desktop";
+    if(u.includes("Windows"))s="Windows";
+    else if(u.includes("Mac OS"))s="macOS";
+    else if(u.includes("Android"))s="Android";
+    else if(u.includes("iPhone")||u.includes("iPad"))s="iOS";
+    else if(u.includes("Linux"))s="Linux";
+    if(u.includes("Mobile")||u.includes("Android")||u.includes("iPhone"))d="Mobile";
+    document.getElementById("dev").innerText=d+" | "+s;
+}
+
+function initSel(){
+    const s=document.getElementById("ms");
+    ML.forEach(m=>{
+        const o=document.createElement("option");
+        o.value=m.id; o.textContent=m.name;
+        s.appendChild(o);
+    });
+    const sep=document.createElement("option");
+    sep.disabled=true; sep.textContent="────────────";
+    s.appendChild(sep);
+    const o=document.createElement("option");
+    o.value="custom"; o.textContent="自定义中转站";
+    s.appendChild(o);
+}
+
+function onModelChange(){
+    const v=document.getElementById("ms").value;
+    document.getElementById("customRow").classList.toggle("show", v==="custom");
+}
+
+// ================================================================
+//                       持久化存储
+// ================================================================
+function save(){localStorage.setItem("aim_keys_v4",JSON.stringify(KL));}
+function load(){
+    const d=localStorage.getItem("aim_keys_v4");
+    KL=d?JSON.parse(d):[];
+    corsProxy=localStorage.getItem("aim_cors")||"";
+    document.getElementById("cp").value=corsProxy;
+}
+function saveCP(){
+    corsProxy=document.getElementById("cp").value.trim();
+    localStorage.setItem("aim_cors",corsProxy);
+}
+
+// ================================================================
+//                       设置面板
+// ================================================================
+function togSP(){document.getElementById("sp").classList.toggle("open");}
+
+function expCfg(){
+    const data=JSON.stringify({keys:KL,cors:corsProxy},null,2);
+    const blob=new Blob([data],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="ai_monitor_config.json";
+    a.click();
+}
+
+function impCfg(){
+    const input=document.createElement("input");
+    input.type="file"; input.accept=".json";
+    input.onchange=function(e){
+        const f=e.target.files[0]; if(!f) return;
+        const reader=new FileReader();
+        reader.onload=function(ev){
+            try{
+                const obj=JSON.parse(ev.target.result);
+                if(obj.keys){KL=obj.keys;save();}
+                if(obj.cors!==undefined){corsProxy=obj.cors;localStorage.setItem("aim_cors",corsProxy);document.getElementById("cp").value=corsProxy;}
+                renderAll();fetchAll();
+                alert("导入成功: "+KL.length+" 条记录");
+            }catch(err){alert("导入失败: JSON 格式错误");}
+        };
+        reader.readAsText(f);
+    };
+    input.click();
+}
+
+function clrAll(){
+    if(!confirm("确认清空所有监控数据?")) return;
+    KL=[];save();renderAll();
+}
+
+// ================================================================
+//                       工具函数
+// ================================================================
+function mask(k){
+    if(!k||k.length<=8) return "****";
+    return k.substring(0,6)+"****"+k.substring(k.length-4);
+}
+
+function buildUrl(model, key){
+    if(model.gu) return model.gu(key);
+    return model.url;
+}
+
+function proxyUrl(url){
+    if(!corsProxy) return url;
+    if(corsProxy.includes("?")) return corsProxy+encodeURIComponent(url);
+    return corsProxy+url;
+}
+
+function fetchWithTimeout(url, opts, ms){
+    ms=ms||10000;
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),ms);
+    return fetch(url,Object.assign({},opts,{signal:ctrl.signal,mode:"cors"})).finally(()=>clearTimeout(t));
+}
+
+// ================================================================
+//                     自定义中转站
+// ================================================================
+async function fetchCustomBilling(item){
+    const base=item.customBaseUrl.replace(/\/+$/,"");
+    const v1=base.endsWith("/v1")?base:(base+"/v1");
+    const root=v1.replace(/\/v1$/,"");
+    const headers={"Authorization":"Bearer "+item.key};
+
+    // 方案1: /v1/dashboard/billing/subscription (new-api/one-api 标准)
+    try{
+        const r1=await fetchWithTimeout(proxyUrl(v1+"/dashboard/billing/subscription"),{headers});
+        if(r1.ok){
+            const sub=await r1.json();
+            const total=parseFloat(sub.hard_limit_usd||sub.system_hard_limit_usd||sub.total_granted||sub.total_available)||0;
+
+            let used=0;
+            try{
+                const now=new Date();
+                const y=now.getFullYear(), mo=String(now.getMonth()+1).padStart(2,"0"), dy=String(now.getDate()).padStart(2,"0");
+                const start=y+"-"+mo+"-01", end=y+"-"+mo+"-"+dy;
+                const r2=await fetchWithTimeout(proxyUrl(v1+"/dashboard/billing/usage?start_date="+start+"&end_date="+end),{headers});
+                if(r2.ok){const u=await r2.json();used=parseFloat(u.total_usage||0)/100;}
+            }catch(e){}
+
+            const remain=total-used;
+            if(total>0) return{remain:remain,detail:"总额: "+total.toFixed(2)+" | 已用: "+used.toFixed(2)};
+            if(total===0&&used===0){
+                // total=0 可能是不支持, 回退
+            } else {
+                return{remain:remain,detail:"总额: "+total.toFixed(2)+" | 已用: "+used.toFixed(2)};
+            }
+        }
+    }catch(e){}
+
+    // 方案2: 仅验证 /v1/models
+    try{
+        const r3=await fetchWithTimeout(proxyUrl(v1+"/models"),{headers});
+        if(r3.ok) return{remain:-1,detail:"密钥有效 | 余额接口不可用"};
+    }catch(e){}
+
+    throw new Error("中转站连接失败");
+}
+
+// ================================================================
+//                     密钥前缀猜测
+// ================================================================
+function guessModels(key){
+    const k=key.toLowerCase();
+    const r=[];
+    if(k.startsWith("tp-")){
+        // 小米 MiMo Token Plan
+        r.push(ML.find(m=>m.id==="mimo-cn"));
+        r.push(ML.find(m=>m.id==="mimo-sgp"));
+        r.push(ML.find(m=>m.id==="mimo-eu"));
+    }
+    if(k.startsWith("sk-")){
+        r.push(ML.find(m=>m.id==="deepseek"));
+        r.push(ML.find(m=>m.id==="moonshot"));
+        r.push(ML.find(m=>m.id==="siliconflow"));
+        r.push(ML.find(m=>m.id==="openai"));
+        r.push(ML.find(m=>m.id==="stepfun"));
+        r.push(ML.find(m=>m.id==="yi"));
+        r.push(ML.find(m=>m.id==="mimo-cn")); // MiMo 按量计费也是 sk-
+    }
+    if(k.startsWith("gsk_")) r.push(ML.find(m=>m.id==="groq"));
+    if(k.startsWith("xai-")) r.push(ML.find(m=>m.id==="xai"));
+    if(k.startsWith("sk-ant-")) r.push(ML.find(m=>m.id==="claude"));
+    if(k.includes(".")) r.push(ML.find(m=>m.id==="zhipu"));
+    return r.filter(Boolean);
+}
+
+// ================================================================
+//                     自动识别
+// ================================================================
+async function tryModel(model, key){
+    try{
+        const url=proxyUrl(buildUrl(model,key));
+        const headers=model.hd(key);
+        const res=await fetchWithTimeout(url,{headers},8000);
+        if(res.status===401||res.status===403||res.status===404) return null;
+        if(!res.ok) return null;
+        const data=await res.json();
+        return model.pq(data);
+    }catch(e){return null;}
+}
+
+async function autoDetect(key){
+    const guesses=guessModels(key);
+    for(const m of guesses){
+        const r=await tryModel(m,key);
+        if(r!==null) return m;
+    }
+    for(const m of ML){
+        if(guesses.includes(m)) continue;
+        const r=await tryModel(m,key);
+        if(r!==null) return m;
+    }
+    return null;
+}
+
+// ================================================================
+//                      添加密钥
+// ================================================================
+async function addKey(){
+    const keyInput=document.getElementById("ki");
+    const selVal=document.getElementById("ms").value;
+    const key=keyInput.value.trim();
+    const btn=document.getElementById("ab");
+
+    if(!key){alert("请输入 API 密钥");return;}
+    if(KL.some(x=>x.key===key)){alert("该密钥已存在");return;}
+
+    btn.disabled=true; btn.textContent="校验中...";
+
+    try{
+        if(selVal==="custom"){
+            const customUrl=document.getElementById("customUrl").value.trim();
+            const customName=document.getElementById("customName").value.trim();
+            const billingType=document.getElementById("customBilling").value;
+            if(!customUrl){alert("请输入中转站地址");btn.disabled=false;btn.textContent="保存并校验";return;}
+
+            const entry={
+                key:key, modelId:"custom",
+                modelName:customName||extractDomain(customUrl),
+                unit:"", hb:billingType==="standard",
+                customBaseUrl:customUrl, customBilling:billingType,
+                refTotal:0, lastRemain:0
+            };
+
+            try{
+                const result=await fetchCustomBilling(entry);
+                if(result&&result.remain>0) entry.lastRemain=result.remain;
+            }catch(e){
+                if(!confirm("中转站验证失败 ("+e.message+")，仍然添加?")) return;
+            }
+
+            KL.push(entry); save(); keyInput.value="";
+            document.getElementById("customUrl").value="";
+            document.getElementById("customName").value="";
+            alert("添加成功: "+entry.modelName);
+
+        } else if(selVal==="auto"){
+            const model=await autoDetect(key);
+            if(!model){
+                alert("未能自动识别。\n\n可能原因:\n1. 密钥错误\n2. CORS 阻止 (可在设置中配置代理)\n3. 平台暂不支持\n\n建议: 手动选择模型后重试");
+                return;
+            }
+            KL.push({key:key,modelId:model.id,modelName:model.name,unit:model.unit,hb:model.hb,refTotal:0,lastRemain:0});
+            save(); keyInput.value="";
+            alert("识别成功: "+model.name);
+
+        } else {
+            const model=ML.find(m=>m.id===selVal);
+            if(!model){alert("配置错误");return;}
+            const result=await tryModel(model,key);
+            if(result===null){
+                if(!confirm(model.name+" 验证失败 (可能是 CORS 限制或密钥错误)。\n仍然添加?")){return;}
+            }
+            KL.push({key:key,modelId:model.id,modelName:model.name,unit:model.unit,hb:model.hb,refTotal:0,lastRemain:0});
+            save(); keyInput.value="";
+            alert("添加成功: "+model.name);
+        }
+
+        renderAll(); fetchAll();
+    } finally {
+        btn.disabled=false; btn.textContent="保存并校验";
+    }
+}
+
+function extractDomain(url){try{return new URL(url).hostname;}catch(e){return url.substring(0,20);}}
+
+// ================================================================
+//                      删除密钥
+// ================================================================
+function delKey(i){
+    if(!confirm("确认删除 "+KL[i].modelName+" 的监控?")) return;
+    KL.splice(i,1); save(); renderAll();
+}
+
+// ================================================================
+//                      渲染卡片
+// ================================================================
+function renderAll(){
+    const c=document.getElementById("cc");
+    if(!KL.length){c.innerHTML='<div class="et">暂无监控项，请添加 API 密钥开始</div>';return;}
+    c.innerHTML="";
+    KL.forEach((item,i)=>{
+        const card=document.createElement("div");
+        card.className="cd"; card.id="c"+i;
+        const badge=item.hb?'<span class="badge">余额</span>':'<span class="badge">验证</span>';
+        card.innerHTML=
+            '<div class="db" onclick="delKey('+i+')">x</div>'+
+            '<div class="cd-h"><div class="mn">'+item.modelName+badge+'</div><div class="tg t-ld" id="s'+i+'">查询中...</div></div>'+
+            '<div class="bal" id="b'+i+'">--<span class="u">'+item.unit+'</span></div>'+
+            '<div class="bar"><div class="bi" id="p'+i+'" style="width:0%"></div></div>'+
+            '<div class="ir"><span id="d'+i+'">加载中...</span><span class="km">'+mask(item.key)+'</span></div>';
+        c.appendChild(card);
+    });
+}
+
+// ================================================================
+//                      查询额度
+// ================================================================
+async function fetchOne(item,i){
+    const s=document.getElementById("s"+i);
+    const b=document.getElementById("b"+i);
+    const p=document.getElementById("p"+i);
+    const d=document.getElementById("d"+i);
+    const card=document.getElementById("c"+i);
+    if(!s) return;
+
+    try{
+        let quota;
+        if(item.modelId==="custom"){
+            quota=await fetchCustomBilling(item);
+        } else {
+            const model=ML.find(m=>m.id===item.modelId);
+            if(!model) throw new Error("未知模型");
+            const url=proxyUrl(buildUrl(model,item.key));
+            const headers=model.hd(item.key);
+            const res=await fetchWithTimeout(url,{headers});
+            if(!res.ok) throw new Error("HTTP "+res.status);
+            const data=await res.json();
+            quota=model.pq(data);
+        }
+
+        if(quota.remain===-1){
+            card.classList.remove("cd-off");
+            s.className="tg t-ok"; s.innerText="有效";
+            b.innerHTML='N/A<span class="u"></span>';
+            p.style.width="100%"; p.className="bi";
+            d.innerText=quota.detail||"";
+            return;
+        }
+
+        const remain=quota.remain;
+        item.lastRemain=remain;
+        if(!item.refTotal||remain>item.refTotal){item.refTotal=remain;save();}
+
+        let pct=0;
+        if(item.refTotal>0) pct=Math.min(100,Math.max(0,Math.round(remain/item.refTotal*100)));
+
+        if(remain<=0){
+            card.classList.add("cd-off");
+            s.className="tg t-off"; s.innerText="已用尽";
+            p.className="bi bi-off";
+        } else if(pct<=20){
+            card.classList.remove("cd-off");
+            s.className="tg t-w"; s.innerText="余额不足";
+            p.className="bi bi-w";
+        } else {
+            card.classList.remove("cd-off");
+            s.className="tg t-ok"; s.innerText="正常";
+            p.className="bi";
+        }
+
+        b.innerHTML=remain.toFixed(2)+'<span class="u">'+(item.unit||"")+'</span>';
+        p.style.width=pct+"%";
+        d.innerText=quota.detail||(pct+"%");
+
+    }catch(err){
+        card.classList.remove("cd-off");
+        s.className="tg t-e"; s.innerText="异常";
+        b.innerHTML='--<span class="u"></span>';
+        p.style.width="0%";
+        d.innerText=err.message||"网络错误/CORS";
+    }
+}
+
+async function fetchAll(){
+    document.getElementById("ft").innerText="最后刷新: "+new Date().toLocaleTimeString()+" (每60秒自动)";
+    await Promise.allSettled(KL.map((item,i)=>fetchOne(item,i)));
+}
+</script>
+</body>
+</html>
